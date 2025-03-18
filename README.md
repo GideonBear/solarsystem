@@ -18,3 +18,5 @@ loading them into the model.
 
 I wrote a client for the API that is capable of getting position and velocity data of any planet.
 I will then put this in the format that Coach 7 understands, and also use it to compare to the results of the modelling.
+
+## Writing the model
