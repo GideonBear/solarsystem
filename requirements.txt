@@ -1,3 +1,5 @@
 requests>=2.32.3
 more_itertools>=10.6.0
-astropy>=7.0.1
+matplotlib>=3.10.1
+numpy>=2.2.4
+pyqt6>=6.8.1

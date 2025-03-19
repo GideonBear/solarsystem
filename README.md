@@ -20,3 +20,17 @@ I wrote a client for the API that is capable of getting position and velocity da
 I will then put this in the format that Coach 7 understands, and also use it to compare to the results of the modelling.
 
 ## Writing the model
+I started up Coach 7 and did the Constructing Text model tutorial.
+Actually, scrap that. Coach doesn't even contain 3d graphs; I'll just use Python for the model as well.
+I'll use matplotlib to show some nice 3d-models to be able to sanity-check without needing to run the numbers every time.
+
+First I started coding up the gravitational force formula, and the logic for decomposing those forces, so that
+they can be turned into x-, y-, and z-accelerations
+
+After some time, I now have the classes `Body`, representing a bodies mass, and position and velocity in all three dimensions,
+and `Force`, representing a force in all three dimensions. I can calculate the gravitational force of a body on another body,
+decompose it, then apply it to the body.
+
+I then fetched and hardcoded the mass of all 9 bodies (incl. sun).
+
+After some time and some bugs, I am now looking at a live 3d representation of Mercury circling around the sun!

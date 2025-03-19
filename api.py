@@ -1,10 +1,12 @@
+from __future__ import annotations
+
+from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime
 from enum import Enum
-from pprint import pprint
+from typing import Self
 
 import requests
-from astropy.time import Time
 from more_itertools import grouper
 
 URL = "https://ssd.jpl.nasa.gov/api/horizons.api"
@@ -24,42 +26,44 @@ class Planet(Enum):
     URANUS = 799
     NEPTUNE = 899
 
+
 @dataclass
 class Query:
     planet: Planet
-    start_time: datetime
-    stop_time: datetime
-    step_size: str
+    time: datetime
 
-    def get(self):
+    def get(self) -> Datapoint:
         data = requests.get(URL, params={
             "COMMAND": str(self.planet.value),
             "OBJ_DATA": "NO",
             "EPHEM_TYPE": "VECTORS",
-            "CENTER": "500@0",
-            "START_TIME": format_time(self.start_time),
-            "STOP_TIME": format_time(self.stop_time),
-            "STEP_SIZE": self.step_size,
+            "CENTER": "500@10",  # This is the sun, not the solar system barycentre, so that the sun does not have to be calculated separately
+            # "START_TIME": format_time(self.start_time),
+            # "STOP_TIME": format_time(self.stop_time),
+            # "STEP_SIZE": self.step_size,
+            "TLIST": format_time(self.time),
         }).json()
 
         if "error" in data:
             raise Exception(data["error"])
-        result = data["result"]
+        result: str = data["result"]
 
         _, result = result.split("$$SOE")
         result, _ = result.split("$$EOE")
         result = result.strip()
 
-        result = (line.strip() for line in result.split("\n"))
-        result = grouper(result, 4, incomplete="strict")
-        result = [Datapoint.from_lines(part) for part in result]
+        result = (line.strip() for line in result.split("\n"))  # type: ignore
+        result = grouper(result, 4, incomplete="strict")  # type: ignore
+        result = [Datapoint.from_lines(part) for part in result]  # type: ignore
 
-        return result
+        assert len(result) == 1
+        result = result[0]
+
+        return result  # type: ignore
 
 
 @dataclass
 class Datapoint:
-    time: datetime
     # km
     x: float
     y: float
@@ -70,24 +74,30 @@ class Datapoint:
     vz: float
 
     @classmethod
-    def from_lines(cls, lines):
+    def from_lines(cls, lines: Sequence[str]) -> Self:
         if not len(lines) == 4:
             raise Exception(lines)
 
-        time, xyz, vxvyvz, _ = lines
+        _, xyz, vxvyvz, _ = lines
 
-        time, _ = time.split("=")
-        time = time.strip()
-        time = Time(time, format="jd", scale="tdb").to_datetime()
+        # time_s, _ = time_s.split("=")
+        # time_s = time_s.strip()
+        # time = Time(time_s, format="jd", scale="tdb").to_datetime()
 
-        _, x, y, z = xyz.split("=")
-        x = float(x.replace("Y", "").strip())
-        y = float(y.replace("Z", "").strip())
-        z = float(z.strip())
+        _, xs, ys, zs = xyz.split("=")
+        x = float(xs.replace("Y", "").strip())
+        y = float(ys.replace("Z", "").strip())
+        z = float(zs.strip())
 
-        _, vx, vy, vz = vxvyvz.split("=")
-        vx = float(vx.replace("VY", "").strip())
-        vy = float(vy.replace("VZ", "").strip())
-        vz = float(vz.strip())
+        _, vxs, vys, vzs = vxvyvz.split("=")
+        vx = float(vxs.replace("VY", "").strip())
+        vy = float(vys.replace("VZ", "").strip())
+        vz = float(vzs.strip())
 
-        return cls(time, x, y, z, vx, vy, vz)
+        # print(f"{x=}")
+        # print(f"{y=}")
+        # print(f"{z=}")
+        # print(f"{vx=}")
+        # print(f"{vy=}")
+        # print(f"{vz=}")
+        return cls(x, y, z, vx, vy, vz)
