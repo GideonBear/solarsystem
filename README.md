@@ -33,4 +33,6 @@ decompose it, then apply it to the body.
 
 I then fetched and hardcoded the mass of all 9 bodies (incl. sun).
 
-After some time and some bugs, I am now looking at a live 3d representation of Mercury circling around the sun!
+After some time, and only(!) two small bugs I am now looking at a live 3d representation of Mercury circling around the sun!
+I am extremely suprised that there were no real issues, and that all the formulas were correct the first time.
+This saves a lot of time.
