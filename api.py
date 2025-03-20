@@ -30,10 +30,10 @@ class Planet(Enum):
 @dataclass
 class Query:
     planet: Planet
-    time: datetime
+    times: Sequence[datetime]
 
-    def get(self) -> Datapoint:
-        data = requests.get(URL, params={
+    def get(self) -> dict[datetime, Datapoint]:
+        resp = requests.get(URL, params={
             "COMMAND": str(self.planet.value),
             "OBJ_DATA": "NO",
             "EPHEM_TYPE": "VECTORS",
@@ -41,34 +41,38 @@ class Query:
             # "START_TIME": format_time(self.start_time),
             # "STOP_TIME": format_time(self.stop_time),
             # "STEP_SIZE": self.step_size,
-            "TLIST": format_time(self.time),
-        }).json()
+            "TLIST": " ".join(format_time(time) for time in self.times),
+        })
+        if not resp.status_code == 200:
+            raise Exception(resp)
+        data = resp.json()
 
         if "error" in data:
             raise Exception(data["error"])
-        result: str = data["result"]
+        result_s: str = data["result"]
 
-        _, result = result.split("$$SOE")
-        result, _ = result.split("$$EOE")
-        result = result.strip()
+        _, result_s = result_s.split("$$SOE")
+        result_s, _ = result_s.split("$$EOE")
+        result_s = result_s.strip()
 
-        result = (line.strip() for line in result.split("\n"))  # type: ignore
-        result = grouper(result, 4, incomplete="strict")  # type: ignore
-        result = [Datapoint.from_lines(part) for part in result]  # type: ignore
+        result = [
+            Datapoint.from_lines(part) for part in grouper(
+                (line.strip() for line in result_s.split("\n")),
+                4, incomplete="strict"
+            )
+        ]
 
-        assert len(result) == 1
-        result = result[0]
-
-        return result  # type: ignore
+        assert len(result) == len(self.times)
+        return dict(zip(self.times, result))
 
 
 @dataclass
 class Datapoint:
-    # km
+    # m
     x: float
     y: float
     z: float
-    # km/s
+    # m/s
     vx: float
     vy: float
     vz: float
@@ -85,14 +89,14 @@ class Datapoint:
         # time = Time(time_s, format="jd", scale="tdb").to_datetime()
 
         _, xs, ys, zs = xyz.split("=")
-        x = float(xs.replace("Y", "").strip())
-        y = float(ys.replace("Z", "").strip())
-        z = float(zs.strip())
+        x = float(xs.replace("Y", "").strip()) * 1000
+        y = float(ys.replace("Z", "").strip()) * 1000
+        z = float(zs.strip()) * 1000
 
         _, vxs, vys, vzs = vxvyvz.split("=")
-        vx = float(vxs.replace("VY", "").strip())
-        vy = float(vys.replace("VZ", "").strip())
-        vz = float(vzs.strip())
+        vx = float(vxs.replace("VY", "").strip()) * 1000
+        vy = float(vys.replace("VZ", "").strip()) * 1000
+        vz = float(vzs.strip()) * 1000
 
         # print(f"{x=}")
         # print(f"{y=}")

@@ -1,7 +1,8 @@
 from __future__ import annotations
 
+from collections.abc import Sequence
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from math import sqrt, log
 from typing import Self
 
@@ -28,14 +29,14 @@ class Planet:
 
 # Values from Horizons, and verified in BiNaS
 SUN = Planet(None, "sun", "yellow", 1988410e24, 695700e3)  # None, because it's only used for fetching position/velocity data, which is 0
-MERCURY = Planet(api.Planet.MERCURY, "mercury", "red", 3.302e23, 2439.4e3)
-VENUS = Planet(api.Planet.VENUS, "venus", "black", 48.685e23, 6051.84e3)
-EARTH = Planet(api.Planet.EARTH, "earth", "black", 5.97219e24, 6371.01e3)
-MARS = Planet(api.Planet.MARS, "mars", "black", 6.4171e23, 3389.92e3)
-JUPITER = Planet(api.Planet.JUPITER, "jupiter", "black", 18.9819e26, 69911e3)
-SATURN = Planet(api.Planet.SATURN, "saturn", "black", 5.6834e26, 58232e3)
-URANUS = Planet(api.Planet.URANUS, "uranus", "black", 86.813e24, 25362e3)
-NEPTUNE = Planet(api.Planet.NEPTUNE, "neptune", "black", 102.409e24, 24624e3)
+MERCURY = Planet(api.Planet.MERCURY, "mercury", "grey", 3.302e23, 2439.4e3)
+VENUS = Planet(api.Planet.VENUS, "venus", "brown", 48.685e23, 6051.84e3)
+EARTH = Planet(api.Planet.EARTH, "earth", "blue", 5.97219e24, 6371.01e3)
+MARS = Planet(api.Planet.MARS, "mars", "red", 6.4171e23, 3389.92e3)
+JUPITER = Planet(api.Planet.JUPITER, "jupiter", "yellow", 18.9819e26, 69911e3)
+SATURN = Planet(api.Planet.SATURN, "saturn", "orange", 5.6834e26, 58232e3)
+URANUS = Planet(api.Planet.URANUS, "uranus", "cyan", 86.813e24, 25362e3)
+NEPTUNE = Planet(api.Planet.NEPTUNE, "neptune", "blue", 102.409e24, 24624e3)
 
 
 @dataclass
@@ -49,30 +50,15 @@ class Body:
     vz: float
 
     @classmethod
-    def from_planet_time(cls, planet: Planet, time: datetime) -> Self:
-        if planet.api_planet:
-            datapoint = api.Query(planet.api_planet, time).get()
-            return cls.from_datapoint(
-                planet,
-                datapoint,
-            )
-        else:
-            return cls(
-                planet,
-                0, 0, 0, 0, 0, 0,
-            )
-
-    @classmethod
     def from_datapoint(cls, planet: Planet, datapoint: Datapoint) -> Self:
-        # Make sure to convert from km and km/s of the Datapoint
         return cls(
             planet,
-            datapoint.x * 1000,
-            datapoint.y * 1000,
-            datapoint.z * 1000,
-            datapoint.vx * 1000,
-            datapoint.vy * 1000,
-            datapoint.vz * 1000,
+            datapoint.x,
+            datapoint.y,
+            datapoint.z,
+            datapoint.vx,
+            datapoint.vy,
+            datapoint.vz,
         )
 
     @property
@@ -144,64 +130,125 @@ class Force:
         return cls(x, y, z)
 
 
+def check_accuracy(body: Body, data: Datapoint) -> None:
+    print(f"==={body.name}")
+    # TODO: diff normalizen, dus normalized pos diff en normalized velocity diff. Dan netjes op een regel
+    for attr in ("x", "y", "z", "vx", "vy", "vz"):
+        print(f"{attr:>2}: ±{abs(getattr(body, attr) - getattr(data, attr)):e} at {f"{getattr(data, attr):e}":>13}")
+    print()
+
+
 def main() -> None:
     # Start values
-    t = 0.0
-    dt = 60 * 60 * 24
+    t = 0.0  # model time in seconds
+    dt = 60 * 60 * 24  # model dt (step size) in seconds
 
-    time = datetime(2025, 1, 2, 3, 4, 5)  # 2025-01-02 03:04:05
+    # min start_time: 1750
+    start_time = datetime(1750, 1, 2, 3, 4, 5)  # 2025-01-02 03:04:05
+    current_time = start_time  # real time current
+    # For 1750: max 5000-10000 (* 60 * 60 * 24)
+    dcheck_ratio = 5000  # How many model steps should pass before doing another check
+    dcheck = timedelta(seconds=dt * dcheck_ratio)  # thus this is the time between each check
+    checks = 25  # checks to be done (should not be higher than 25)
+    t_tot = dt * dcheck_ratio * checks  # total model time
+    times = [start_time + (i * dcheck) for i in range(checks)]
 
-    sun = Body.from_planet_time(SUN, time)
-    mercury = Body.from_planet_time(MERCURY, time)
+    # Body initialization
 
-    mplstyle.use('fast')
+    planets = (MERCURY, VENUS, EARTH, MARS, JUPITER, SATURN, URANUS, NEPTUNE)
+    bodies: list[tuple[Body, dict[datetime, Datapoint] | None]] = [
+        (Body(SUN, 0, 0, 0, 0, 0, 0), None),
+    ]
 
-    size = 1e12
+    for planet in planets:
+        assert planet.api_planet
+        data = api.Query(planet.api_planet, times).get()
+        bodies.append((
+            Body.from_datapoint(planet, data[start_time]),
+            data,
+        ))
 
-    fig, ax = plt.subplots(
+    # Plot initialization
+
+    # mplstyle.use('fast')
+
+    fig, axes = plt.subplots(
         1,
-        1,
+        3,
         subplot_kw={"projection": "3d"},
         figsize=(100, 100),
     )
 
+    sizes = (1e13, 1e12, 4e11)  # Sizes of the subgraphs
+    axes = list(zip(axes, sizes))
+
     i = 0
-    while t < 100000 * dt:
+    while t < t_tot:
         i += 1
+
+        if current_time in bodies[1][1]:
+            dtime = current_time - start_time
+            print(f"===== Inaccuracies at {dtime}\n")
+            for body, data in bodies:  # type: ignore
+                if body.planet == SUN:
+                    # Always 0, 0, 0, 0, 0, 0
+                    continue
+                check_accuracy(body, data[current_time])
 
         # Advance time
         t += dt
+        current_time += timedelta(seconds=dt)
 
         # Update positions and velocities
 
-        FGsm = sun.gravitational_force(mercury)
-        FGsm_decomposed = Force.from_res(sun, mercury, FGsm)
-        mercury.apply_force(FGsm_decomposed, dt)
-        mercury.update_position(dt)
+        for body, _data in bodies:  # type: ignore
+            if body.planet == SUN:
+                # Skip sun gravity to keep it centered
+                continue
+
+            for other, _data in bodies:  # type: ignore
+                # Apply gravity from all other bodies (incl. the sun)
+                if other == body:
+                    continue
+
+                FG = other.gravitational_force(body)
+                FG_decomposed = Force.from_res(other, body, FG)
+                body.apply_force(FG_decomposed, dt)
+
+            body.update_position(dt)
 
         # Plot
 
-        if i % 1234000 == 0:
-            def plot(body: Body) -> None:
-                display_size = max(
-                    log(body.r, 1.3),
-                    10,
-                ) / 5
-                ax.plot(
-                    body.x, body.y, body.z,
-                    marker="o",
-                    markersize=display_size,
-                    color=body.color,
-                )
+        if current_time in bodies[1][1]:
+            for ax, size in axes:
+                for body, data in bodies:  # type: ignore
+                    display_size = max(
+                        log(body.r, 1.3),
+                        10,
+                    ) / 10
+                    ax.plot(
+                        body.x, body.y, body.z,
+                        marker="o",
+                        markersize=display_size,
+                        color=body.color,
+                    )
+                    if data:
+                        this = data[current_time]
+                        ax.plot(
+                            this.x, this.y, this.z,
+                            marker="o",
+                            markersize=display_size,
+                            color=body.color,
+                            alpha=0.5,
+                        )
 
-            plot(sun)
-            plot(mercury)
+                ax.set_xlim((-size / 2, size / 2))
+                ax.set_ylim((-size / 2, size / 2))
+                ax.set_zlim((-size / 2, size / 2))
 
-            ax.set_xlim((-size / 2, size / 2))
-            ax.set_ylim((-size / 2, size / 2))
-            ax.set_zlim((-size / 2, size / 2))
-            plt.pause(0.0001)
-            ax.clear()
+            plt.pause(0.5)
+            for ax, size in axes:
+               ax.clear()
 
     # plt.show()
 

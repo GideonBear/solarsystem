@@ -13,7 +13,7 @@ and how long it takes for significant inaccuracies to take place.
 I decided on getting position and velocities relative to the sun, as that's the most logical.
 I did some searching around and found this database from NASA, the [Horizons System](https://ssd.jpl.nasa.gov/horizons/).
 Its data is available via a simple web-app, which is perfect. It delivers X, Y, and Z-values for position and velocity
-relative to any body, from any time. I started looking if it has an API, to automate fetching values and
+relative to any body, from any time (within a certain time-frame). I started looking if it has an API, to automate fetching values and
 loading them into the model.
 
 I wrote a client for the API that is capable of getting position and velocity data of any planet.
@@ -34,5 +34,27 @@ decompose it, then apply it to the body.
 I then fetched and hardcoded the mass of all 9 bodies (incl. sun).
 
 After some time, and only(!) two small bugs I am now looking at a live 3d representation of Mercury circling around the sun!
-I am extremely suprised that there were no real issues, and that all the formulas were correct the first time.
-This saves a lot of time.
+I am extremely surprised that there were no real issues, and that all the formulas were correct the first time.
+This saves a lot of time. Adding the other planets is easy enough.
+
+## Inaccuracies
+
+I also made a system to see my model and the actual data diverge.
+
+After making the model apply gravity from every body to every other body, Mercury is still very inaccurate,
+but the far-away planets are fine.
+
+I just realized I should probably render the actual positions as well, that would be fun! I made them render
+transparently, which showed inaccuracies visually nicely.
+
+## Conclusion
+// TODO: waardes insplicen in de text
+It's surprisingly accurate, for a long time!
+I am noticing that there's often some inaccuracy during a cycle, that resets when the planet is in its
+original position again. The actual (permanent) inaccuracies only start to form around [TODO].
+
+Interesting to note is that far-away planets are generally just more accurate,
+both for the temporary cycle-inaccuracies as for the permanent fleeting inaccuracies.
+
+Also funny is that modeling only the gravity of the sun to the planets (instead of the sun and all other planets)
+has little to no effect.
