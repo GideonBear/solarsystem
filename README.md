@@ -11,7 +11,7 @@ and how long it takes for significant inaccuracies to take place.
 
 ## Getting the data
 I decided on getting position and velocities relative to the sun, as that's the most logical.
-I did some searching around and found this database from NASA, the [Horizons System](https://ssd.jpl.nasa.gov/horizons/).
+I did some searching around and found this database from NASA, [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/).
 Its data is available via a simple web-app, which is perfect. It delivers X, Y, and Z-values for position and velocity
 relative to any body, from any time (within a certain time-frame). I started looking if it has an API, to automate fetching values and
 loading them into the model.
