@@ -39,13 +39,9 @@ This saves a lot of time. Adding the other planets is easy enough.
 
 ## Inaccuracies
 
-I also made a system to see my model and the actual data diverge.
-
-After making the model apply gravity from every body to every other body, Mercury is still very inaccurate,
-but the far-away planets are fine.
-
-I just realized I should probably render the actual positions as well, that would be fun! I made them render
-transparently, which showed inaccuracies visually nicely.
+I then made a system to see my model and the actual data diverge, and realized I should probably
+render the actual positions as well, that would be fun! I made them render transparently,
+which showed inaccuracies visually nicely. I also have a text-based view of the inaccuracies, and it can export to csv.
 
 I noticed two types of inaccuracies:
 
