@@ -9,6 +9,10 @@ all the planets and see how accurate it is. For that I would need a database
 containing position and velocity of all the planets. Then I would want to see how accurate my model is,
 and how long it takes for significant inaccuracies to take place.
 
+The solar system is easy to model, but hard to calculate due to a lot of different and constantly changing factors.
+It is also almost impossible to do an experiment with gravity forces,
+because the masses in the solar system are much larger than what we can manufacture here on Earth to test with.
+
 ## Getting the data
 I decided on getting position and velocities relative to the sun, as that's the most logical.
 I did some searching around and found this database from NASA, [JPL Horizons](https://ssd.jpl.nasa.gov/horizons/).
