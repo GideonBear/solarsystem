@@ -237,12 +237,12 @@ def main() -> None:
 
         # Update positions and velocities
 
-        for body, _data in bodies:  # type: ignore
+        for body, _data in bodies:
             if body.planet == SUN:
                 # Skip sun gravity to keep it centered
                 continue
 
-            for other, _data in bodies:  # type: ignore
+            for other, _data in bodies:
                 # Apply gravity from all other bodies (incl. the sun)
                 if other == body:
                     continue
