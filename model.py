@@ -4,6 +4,7 @@ from collections.abc import Sequence
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from math import sqrt, log
+from sys import stderr
 from typing import Self
 
 import matplotlib.pyplot as plt
@@ -94,12 +95,20 @@ class Body:
         self.vy += ay * dt
         self.vz += az * dt
 
-    def dist_tot(self, other: Self) -> float:
+    def dist_tot(self, other: Self | Datapoint) -> float:
         # a^2 + b^2 + c^2 = d^2
         return sqrt(
               pow(abs(self.x - other.x), 2)
             + pow(abs(self.y - other.y), 2)
             + pow(abs(self.z - other.z), 2)
+        )
+
+    def vel_diff_tot(self, other: Self | Datapoint) -> float:
+        # a^2 + b^2 + c^2 = d^2
+        return sqrt(
+            pow(abs(self.vx - other.vx), 2)
+            + pow(abs(self.vy - other.vy), 2)
+            + pow(abs(self.vz - other.vz), 2)
         )
 
     def gravitational_force(self, other: Self) -> float:
@@ -131,11 +140,22 @@ class Force:
 
 
 def check_accuracy(body: Body, data: Datapoint) -> None:
-    print(f"==={body.name}")
-    # TODO: diff normalizen, dus normalized pos diff en normalized velocity diff. Dan netjes op een regel
-    for attr in ("x", "y", "z", "vx", "vy", "vz"):
-        print(f"{attr:>2}: ±{abs(getattr(body, attr) - getattr(data, attr)):e} at {f"{getattr(data, attr):e}":>13}")
-    print()
+    pos_diff = body.dist_tot(data)
+    pos_oom = max(abs(x) for x in (data.x, data.y, data.z))
+    pos_acc = pos_diff / pos_oom
+    vel_diff = body.vel_diff_tot(data)
+    vel_oom = max(abs(x) for x in (data.vx, data.vy, data.vz))
+    vel_acc = vel_diff / vel_oom
+
+    print(f"    {body.name:>7}:", end="", file=stderr)
+    for (diff, oom, acc) in ((pos_diff, pos_oom, pos_acc), (vel_diff, vel_oom, vel_acc)):
+        print(
+            f"    Position: absolute difference {diff:e} at oom {oom:e} inaccuracy {f"{acc:%}":>11}",
+            end="",
+            file=stderr,
+        )
+        print(f"{diff:e},{oom:e},{acc:e},", end="")
+    print(file=stderr)
 
 
 def main() -> None:
@@ -144,14 +164,19 @@ def main() -> None:
     dt = 60 * 60 * 24  # model dt (step size) in seconds
 
     # min start_time: 1750
-    start_time = datetime(1750, 1, 2, 3, 4, 5)  # 2025-01-02 03:04:05
+    start_time = datetime(1900, 1, 2, 3, 4, 5)  # 2025-01-02 03:04:05
     current_time = start_time  # real time current
+    check_start_time = datetime(1900, 1, 2, 3, 4, 5)
+    # check_start_time = start_time
     # For 1750: max 5000-10000 (* 60 * 60 * 24)
-    dcheck_ratio = 5000  # How many model steps should pass before doing another check
+    dcheck_ratio = 365 * 10  # How many model steps should pass before doing another check
     dcheck = timedelta(seconds=dt * dcheck_ratio)  # thus this is the time between each check
     checks = 25  # checks to be done (should not be higher than 25)
-    t_tot = dt * dcheck_ratio * checks  # total model time
-    times = [start_time + (i * dcheck) for i in range(checks)]
+    t_tot = (check_start_time - start_time).total_seconds() + (dt * dcheck_ratio * checks)  # total model time
+    times = [start_time] + [check_start_time + (i * dcheck) for i in range(checks)]
+
+    plot_on_check = True  # Whether to plot for each check
+    plot_on_interval = None  # On which interval of dt to plot, if any
 
     # Body initialization
 
@@ -182,18 +207,29 @@ def main() -> None:
     sizes = (1e13, 1e12, 4e11)  # Sizes of the subgraphs
     axes = list(zip(axes, sizes))
 
+    print("time,", end="")
+    for body, _data in bodies:
+        if body.planet == SUN:
+            continue
+        print(f"{body.name}_pos_diff,{body.name}_pos_oom,{body.name}_pos_acc,", end="")
+        print(f"{body.name}_vel_diff,{body.name}_vel_oom,{body.name}_vel_acc,", end="")
+    print()
+
     i = 0
     while t < t_tot:
         i += 1
 
         if current_time in bodies[1][1]:
             dtime = current_time - start_time
-            print(f"===== Inaccuracies at {dtime}\n")
+            print(f"===== Inaccuracies at {dtime}", file=stderr)
+            print(f"{current_time},", end="")
             for body, data in bodies:  # type: ignore
                 if body.planet == SUN:
                     # Always 0, 0, 0, 0, 0, 0
                     continue
                 check_accuracy(body, data[current_time])
+            print()
+            print(file=stderr)
 
         # Advance time
         t += dt
@@ -219,7 +255,7 @@ def main() -> None:
 
         # Plot
 
-        if current_time in bodies[1][1]:
+        if (plot_on_check and current_time in bodies[1][1]) or (plot_on_interval and i % plot_on_interval == 0):
             for ax, size in axes:
                 for body, data in bodies:  # type: ignore
                     display_size = max(
@@ -232,7 +268,7 @@ def main() -> None:
                         markersize=display_size,
                         color=body.color,
                     )
-                    if data:
+                    if data and current_time in data:
                         this = data[current_time]
                         ax.plot(
                             this.x, this.y, this.z,

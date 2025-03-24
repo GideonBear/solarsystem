@@ -47,14 +47,27 @@ but the far-away planets are fine.
 I just realized I should probably render the actual positions as well, that would be fun! I made them render
 transparently, which showed inaccuracies visually nicely.
 
+I noticed two types of inaccuracies:
+
+### Cyclic inaccuracies
+Some inaccuracies were purely cyclic, and disappeared after a full cycle was done. For example, in the first cycle
+Venus reached a positional inaccuracy of up to 5.41e09 m, but after a full cycle this was back to 3.47e08 m.
+
+### Permanent inaccuracies
+There was also a noticeable permanent inaccuracy over longer periods of time. For example, Venus got an inaccuracy of 5.21e09 m
+at its lowest in its cycle after 25 years, which was only 5.81e08 m after a single year. I will call this
+lowest inaccuracy in its cycle the permanent inaccuracy.
+
+### Different planets
+The inaccuracies (mostly the permanent ones) differed wildly between planets.
+Mercury for example, developed a permanent inaccuracy of 4.20e10 m after only a year,
+which is insanely high given that the length of the orbit is only around 3.5e11 m.
+However, far-away planets like neptune only reach that order of magnitude after 15-25 years; which then still is very
+small compared to the orbit length of 2.80e13 m.
+
+## Sources of inaccuracies and influence of step size
+I think the major source of inaccuracy here is that I am completely disregarding any pull that the planets have on the sun.
+This probably especially affect Mercury, which is the closest to the sun.
+[TODO: STEP SIZE TESTEN EN VERGELIJKEN MET CIJFERS HIERBOVEN]
+
 ## Conclusion
-// TODO: waardes insplicen in de text
-It's surprisingly accurate, for a long time!
-I am noticing that there's often some inaccuracy during a cycle, that resets when the planet is in its
-original position again. The actual (permanent) inaccuracies only start to form around [TODO].
-
-Interesting to note is that far-away planets are generally just more accurate,
-both for the temporary cycle-inaccuracies as for the permanent fleeting inaccuracies.
-
-Also funny is that modeling only the gravity of the sun to the planets (instead of the sun and all other planets)
-has little to no effect.
