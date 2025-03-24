@@ -51,23 +51,28 @@ I noticed two types of inaccuracies:
 
 ### Cyclic inaccuracies
 Some inaccuracies were purely cyclic, and disappeared after a full cycle was done. For example, in the first cycle
-Venus reached a positional inaccuracy of up to 5.41e09 m, but after a full cycle this was back to 3.47e08 m.
+Venus reached a positional inaccuracy of up to 2.37e08 m, but after a full cycle this was back to 5.99e07 m.
 
 ### Permanent inaccuracies
-There was also a noticeable permanent inaccuracy over longer periods of time. For example, Venus got an inaccuracy of 5.21e09 m
-at its lowest in its cycle after 25 years, which was only 5.81e08 m after a single year. I will call this
+There was also a noticeable permanent inaccuracy over longer periods of time. For example, Venus got an inaccuracy of 1.19e09 m
+at its lowest in its cycle after 25 years, which was only 8.81e07 m after a single year. I will call this
 lowest inaccuracy in its cycle the permanent inaccuracy.
 
-### Different planets
-The inaccuracies (mostly the permanent ones) differed wildly between planets.
-Mercury for example, developed a permanent inaccuracy of 4.20e10 m after only a year,
-which is insanely high given that the length of the orbit is only around 3.5e11 m.
-However, far-away planets like neptune only reach that order of magnitude after 15-25 years; which then still is very
-small compared to the orbit length of 2.80e13 m.
-
-## Sources of inaccuracies and influence of step size
+### Sources of inaccuracies and influence of step size
 I think the major source of inaccuracy here is that I am completely disregarding any pull that the planets have on the sun.
 This probably especially affect Mercury, which is the closest to the sun.
-[TODO: STEP SIZE TESTEN EN VERGELIJKEN MET CIJFERS HIERBOVEN]
+
+An obvious possible source of inaccuracy is the step size of the model. I am using an hour (60 * 60 s) as step size,
+which makes the modelling process pretty fast. So, I tried reducing the step size to 1 minute (60 s). This took a really long time
+(around 20 minutes on my home PC), and it actually did something. The permanent accuracy seemed to be worse somehow
+(Venus' went up to 1.64e09 from 1.19e09), but Venus' cyclic accuracy went to at most 7.64e07 the first cycle, from the 2.37e08 when the
+step size was 60 times higher.
+
+Initially I had a step size of a day (60 * 60 * 24 s), but that resulted in wild inaccuracies (both permanent and cyclic),
+especially Mercury, which had inaccuracies larger than its distance to the sun after only a year.
+
+So I think most of the cyclic inaccuracy can be attributed simply to how detailed the model is.
+Why the permanent inaccuracy gets worse though, is a mystery to me!
 
 ## Conclusion
+It's pretty accurate! I'm happy with how it turned out, and actually shocked that the model worked on basically the first try.

@@ -161,15 +161,15 @@ def check_accuracy(body: Body, data: Datapoint) -> None:
 def main() -> None:
     # Start values
     t = 0.0  # model time in seconds
-    dt = 60 * 60 * 24  # model dt (step size) in seconds
+    dt = 60 * 60 # model dt (step size) in seconds
 
     # min start_time: 1750
-    start_time = datetime(1900, 1, 2, 3, 4, 5)  # 2025-01-02 03:04:05
+    start_time = datetime(2025, 1, 2, 3, 4, 5)  # 2025-01-02 03:04:05
     current_time = start_time  # real time current
-    check_start_time = datetime(1900, 1, 2, 3, 4, 5)
+    check_start_time = datetime(2025, 1, 2, 3, 4, 5)
     # check_start_time = start_time
     # For 1750: max 5000-10000 (* 60 * 60 * 24)
-    dcheck_ratio = 365 * 10  # How many model steps should pass before doing another check
+    dcheck_ratio = 10 * 24  # How many model steps should pass before doing another check
     dcheck = timedelta(seconds=dt * dcheck_ratio)  # thus this is the time between each check
     checks = 25  # checks to be done (should not be higher than 25)
     t_tot = (check_start_time - start_time).total_seconds() + (dt * dcheck_ratio * checks)  # total model time
