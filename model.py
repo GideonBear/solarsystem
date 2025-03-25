@@ -113,7 +113,7 @@ class Body:
 
     def gravitational_force(self, other: Self) -> float:
         # print(self.dist_tot(other))
-        return G * self.m * other.m / pow(self.dist_tot(other), 2)  # FG = m1 * m2 / r^2
+        return G * self.m * other.m / pow(self.dist_tot(other), 2)  # FG = G * m1 * m2 / r^2
 
 
 @dataclass
